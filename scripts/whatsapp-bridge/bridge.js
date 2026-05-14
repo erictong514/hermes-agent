@@ -224,9 +224,25 @@ async function startSocket() {
     // than 'notify'. Accept both and filter agent echo-backs below.
     if (type !== 'notify' && type !== 'append') return;
 
+    // Include both device-indexed JIDs and bare JIDs (no device suffix).
+    // In group quoted messages, contextInfo.participant uses the bare format
+    // (e.g. "85290410066@s.whatsapp.net") while sock.user.id includes the
+    // device index (e.g. "85290410066:10@s.whatsapp.net"). Both forms must
+    // be present so _message_is_reply_to_bot() matches either variant.
+    const _bareJid = (raw) => {
+      if (!raw) return null;
+      const colon = raw.indexOf(':');
+      const at = raw.lastIndexOf('@');
+      if (colon !== -1 && at !== -1 && colon < at) {
+        return raw.slice(0, colon) + '@' + raw.slice(at + 1);
+      }
+      return normalizeWhatsAppId(raw);
+    };
     const botIds = Array.from(new Set([
       normalizeWhatsAppId(sock.user?.id),
       normalizeWhatsAppId(sock.user?.lid),
+      _bareJid(sock.user?.id),
+      _bareJid(sock.user?.lid),
     ].filter(Boolean)));
 
     for (const msg of messages) {
