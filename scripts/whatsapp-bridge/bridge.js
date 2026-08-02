@@ -203,7 +203,12 @@ function trackSentMessageId(sent) {
 
 function normalizeWhatsAppId(value) {
   if (!value) return '';
-  return String(value).replace(':', '@');
+  // Strip optional Baileys device-id suffix (":<digits>@" → "@") so that
+  // sock.user.id ("85295651459:41@s.whatsapp.net") and the same participant
+  // referenced via contextInfo.participant ("85295651459@s.whatsapp.net")
+  // normalize to identical strings. Without this, reply-to-bot detection
+  // in the gateway fails because the two sides never match.
+  return String(value).replace(/:(\d+)@/, '@').replace(':', '@');
 }
 
 function redactWhatsAppId(value) {

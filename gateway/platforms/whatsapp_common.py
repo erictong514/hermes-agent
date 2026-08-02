@@ -162,6 +162,12 @@ class WhatsAppBehaviorMixin:
         if not value:
             return ""
         normalized = str(value).strip()
+        # Strip optional Baileys device-id suffix (":<digits>@" → "@") so
+        # sock.user.id ("85295651459:41@s.whatsapp.net") and
+        # contextInfo.participant ("85295651459@s.whatsapp.net") normalize
+        # to identical strings. Without this, reply-to-bot detection fails
+        # because botIds and quotedParticipant never match.
+        normalized = re.sub(r":\d+@", "@", normalized)
         if ":" in normalized and "@" in normalized:
             normalized = normalized.replace(":", "@", 1)
         return normalized
